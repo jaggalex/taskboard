@@ -5,21 +5,36 @@ import { DndContext, type DragEndEvent, type DragStartEvent, DragOverlay, closes
 import { TaskItem } from './components/TaskItem';
 import { useTaskStore } from './store/taskStore';
 import { TaskModal } from './components/TaskModal';
-// import TodoItem from './components/TodoItem';
 
 function App() {
   const tasks = useTaskStore((state) => state.tasks);
   const moveTask = useTaskStore((state) => state.moveTask);
   const moveTaskToColumn = useTaskStore((state) => state.moveTaskToColumn);
-
+  
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  // Состояние для управления модальным окном
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [initialStatus, setInitialStatus] = useState<TaskStatus | undefined>(undefined);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const todoTasks = tasks.filter(task => task.status === 'todo');
   const inProgressTasks = tasks.filter(task => task.status === 'in-progress');
   const doneTasks = tasks.filter(task => task.status === 'done');
+
+  const handleOpenCreateModal = () => {
+    setSelectedTask(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (task: Task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTask(null);
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     const task = tasks.find(t => t.id === event.active.id);
@@ -31,6 +46,7 @@ function App() {
     const { active, over } = event;
 
     if (!over) return;
+    if (active.id === over.id) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
@@ -55,58 +71,40 @@ function App() {
       } else { // isOverColumn
         overStatus = over.data.current!.id;
       }
-
+      
       moveTaskToColumn(activeId, overStatus);
     }
   };
 
-  const openCreateModal = (status: TaskStatus) => {
-    console.log('Opening create modal for status:', status);
-    setEditingTask(null);
-    setInitialStatus(status);
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (task: Task) => {
-    setEditingTask(task);
-    setInitialStatus(task.status);
-    setIsModalOpen(true);
-  };
-
-  const closeTaskModal = () => {
-    setIsModalOpen(false);
-    setEditingTask(null);
-    setInitialStatus(undefined);
-  };
-
   return (
-    <>
-      <DndContext
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        collisionDetection={closestCorners}
-      >
-        <main className="p-8 min-h-screen">
-          <h1 className="text-4xl font-extrabold mb-10 text-center tracking-tight">📋 TaskBoard</h1>
-          <div className="flex flex-row flex-nowrap gap-2 overflow-x-auto content-center">
-            <TaskColumn id="todo" title="Нужно сделать" tasks={todoTasks} onAddTask={openCreateModal} onEditTask={openEditModal} />
-            <TaskColumn id="in-progress" title="В процессе" tasks={inProgressTasks} onAddTask={openCreateModal} onEditTask={openEditModal} />
-            <TaskColumn id="done" title="Готово" tasks={doneTasks} onAddTask={openCreateModal} onEditTask={openEditModal} />
-          </div>
-        </main>
+    <DndContext
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      collisionDetection={closestCorners}
+    >
+      <main className="p-8 min-h-screen bg-slate-100">
+        <div className="flex justify-between items-center mb-10">
+            <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">📋 TaskBoard</h1>
+            <button 
+              onClick={handleOpenCreateModal}
+              className="px-5 py-2.5 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 transition-colors"
+            >
+              + Создать задачу
+            </button>
+        </div>
+        <div className="flex space-x-8 justify-center items-start mt-4">
+          <TaskColumn id="todo" title="Нужно сделать" tasks={todoTasks} onTaskClick={handleOpenEditModal} />
+          <TaskColumn id="in-progress" title="В процессе" tasks={inProgressTasks} onTaskClick={handleOpenEditModal} />
+          <TaskColumn id="done" title="Готово" tasks={doneTasks} onTaskClick={handleOpenEditModal} />
+        </div>
+      </main>
 
-        <DragOverlay>
-          {activeTask ? <TaskItem task={activeTask} onEditTask={openEditModal} /> : null}
-        </DragOverlay>
+      <DragOverlay>
+        {activeTask ? <TaskItem task={activeTask} onClick={() => {}} /> : null}
+      </DragOverlay>
 
-        {isModalOpen && (
-          <TaskModal
-            task={editingTask}
-            onClose={closeTaskModal}
-          />
-        )}
-      </DndContext>
-    </>
+      {isModalOpen && <TaskModal task={selectedTask} onClose={handleCloseModal} />}
+    </DndContext>
   );
 }
 

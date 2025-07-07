@@ -5,14 +5,13 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
 interface TaskColumnProps {
-  id: TaskStatus;
+  id: string;
   title: string;
   tasks: Task[];
-  onAddTask: (status: TaskStatus) => void;
-  onEditTask: (task: Task) => void;
-} 
+  onTaskClick: (task: Task) => void;
+}
 
-export const TaskColumn: FC<TaskColumnProps> = ({ id, title, tasks, onAddTask, onEditTask}) => {
+export const TaskColumn: FC<TaskColumnProps> = ({ id, title, tasks, onTaskClick }) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
     data: {
@@ -22,34 +21,25 @@ export const TaskColumn: FC<TaskColumnProps> = ({ id, title, tasks, onAddTask, o
   });
 
   const style = {
-    backgroundColor: isOver ? 'rgba(10, 18, 21, 0.1)' : '#414649',
+    backgroundColor: isOver ? 'rgba(2, 132, 199, 0.1)' : '#f1f5f9', // bg-slate-100 with sky-600 overlay
     transition: 'background-color 0.2s ease-in-out',
-    boxShadow: isOver ? '0 4px 12px 0 rgba(220, 148, 148, 0.1)' : 'none',
+    boxShadow: isOver ? '0 4px 12px 0 rgba(0, 0, 0, 0.1)' : 'none',
   };
 
   const taskIds = tasks.map(task => task.id);
 
   return (
-    <div ref={setNodeRef} style={style} className="rounded-xl p-4 flex-col h-fit min-h-[500px]">
+    <div ref={setNodeRef} style={style} className="rounded-xl p-4 w-80 flex-shrink-0 shadow-sm bg-slate-200">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">{title} ({tasks.length})
-        </h2>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => onAddTask(id)}
-            className="text-slate-500 hover:text-sky-600 transition-colors"
-            title="Добавить задачу"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        </div>
+        <h2 className="text-xl font-bold text-slate-700">{title}</h2>
+        <span className="text-sm font-semibold text-slate-500 bg-slate-300/50 px-2 py-1 rounded-full">
+          {tasks.length}
+        </span>
       </div>
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3">
           {tasks.map(task => (
-            <TaskItem key={task.id} task={task} onEditTask={onEditTask} />
+            <TaskItem key={task.id} task={task} onClick={onTaskClick} />
           ))}
         </div>
       </SortableContext>
