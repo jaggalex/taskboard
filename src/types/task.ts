@@ -5,6 +5,15 @@ export interface Task {
   title: string;
   description?: string;
   status: TaskStatus;
-  createdAt: Date;
-  updatedAt: Date;
+}
+
+export interface TaskState {
+  tasks: Task[];
+  draggedTask: string | null;
+  addTask: (task: Omit<Task, 'id'>) => void;
+  updateTask: (id: string, task: Partial<Omit<Task, 'id'>>) => void;
+  deleteTask: (id: string) => void;
+  moveTask: (activeId: string, overId: string) => void;
+  moveTaskToColumn: (activeId: string, newStatus: TaskStatus) => void;
+  setDraggedTask: (id: string | null) => void;
 }
