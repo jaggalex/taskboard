@@ -44,13 +44,13 @@ export const useTaskStore = create<TaskState>()(
       },
       moveTaskToColumn: (activeId, newStatus) => {
         set((state) => {
-          const activeIndex = state.tasks.findIndex((t) => t.id === activeId);
-          if (activeIndex === -1) {
-            return state;
-          }
-          
-          const newTasks = [...state.tasks];
-          newTasks[activeIndex] = { ...newTasks[activeIndex], status: newStatus };
+          const taskToMove = state.tasks.find((t) => t.id === activeId);
+          if (!taskToMove) return state;
+
+          const updatedTask = { ...taskToMove, status: newStatus };
+
+          const remainingTasks = state.tasks.filter((t) => t.id !== activeId);
+          const newTasks = [...remainingTasks, updatedTask];
           
           return { tasks: newTasks };
         });

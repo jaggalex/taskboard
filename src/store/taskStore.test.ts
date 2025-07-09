@@ -71,12 +71,12 @@ describe('taskStore', () => {
     });
 
     const task1Id = result.current.tasks.find(t => t.title === 'Task 1')!.id;
-    const task2Id = result.current.tasks.find(t => t.title === 'Task 2')!.id;
+    
 
-    // Симулируем перетаскивание Task 1 на место Task 2
+    // Симулируем перетаскивание Task 1 в колонку 'in-progress'
     act(() => {
       result.current.setDraggedTask(task1Id);
-      result.current.moveTask(task1Id, task2Id);
+      result.current.moveTaskToColumn(task1Id, 'in-progress');
     });
 
     const movedTask = result.current.tasks.find(t => t.id === task1Id);
