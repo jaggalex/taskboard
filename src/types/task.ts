@@ -16,4 +16,6 @@ export interface TaskState {
   moveTask: (activeId: string, overId: string) => void;
   moveTaskToColumn: (activeId: string, newStatus: TaskStatus) => void;
   setDraggedTask: (id: string | null) => void;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
 }

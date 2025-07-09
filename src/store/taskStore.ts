@@ -9,6 +9,8 @@ export const useTaskStore = create<TaskState>()(
     (set) => ({
       tasks: [],
       draggedTask: null,
+      searchTerm: '',
+      setSearchTerm: (term) => set({ searchTerm: term }),
       setDraggedTask: (id) => set({ draggedTask: id }),
       addTask: (task) => {
         const newTask: Task = {

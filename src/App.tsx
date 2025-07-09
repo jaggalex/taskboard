@@ -23,8 +23,10 @@ const MoonIcon = () => (
 
 function App() {
   const [theme, toggleTheme] = useTheme();
-  // Подписываемся только на массив задач для рендеринга
+  // Подписываемся на нужные части состояния
   const tasks = useTaskStore((state) => state.tasks);
+  const searchTerm = useTaskStore((state) => state.searchTerm);
+  const setSearchTerm = useTaskStore((state) => state.setSearchTerm);
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -32,9 +34,15 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  const todoTasks = tasks.filter(task => task.status === 'todo');
-  const inProgressTasks = tasks.filter(task => task.status === 'in-progress');
-  const doneTasks = tasks.filter(task => task.status === 'done');
+  // Фильтруем задачи на основе поискового запроса
+  const filteredTasks = tasks.filter(task => 
+    task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const todoTasks = filteredTasks.filter(task => task.status === 'todo');
+  const inProgressTasks = filteredTasks.filter(task => task.status === 'in-progress');
+  const doneTasks = filteredTasks.filter(task => task.status === 'done');
 
 
   const handleOpenCreateModal = () => {
@@ -113,6 +121,15 @@ function App() {
         <div className="flex justify-between items-center mb-10">
           <h1 className="text-4xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">📋 TaskBoard</h1>
           <div className="flex items-center space-x-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Поиск задач..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="px-4 py-2 w-64 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100"
+              />
+            </div>
             <button
               onClick={handleOpenCreateModal}
               className="px-5 py-2.5 bg-sky-600 text-white font-semibold rounded-lg shadow-md hover:bg-sky-700 transition-colors"
