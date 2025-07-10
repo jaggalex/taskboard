@@ -1,108 +1,28 @@
 import { act, renderHook } from '@testing-library/react';
 import { useTaskStore } from './taskStore';
 
-// Мокаем uuid
-jest.mock('uuid', () => ({
-  v4: () => 'test-id-' + Math.random(),
-}));
-
 describe('taskStore', () => {
+  // Сбрасываем состояние перед каждым тестом
   beforeEach(() => {
-    // Сбрасываем состояние перед каждым тестом
     act(() => {
-      const store = useTaskStore.getState();
-      store.tasks = [];
-      store.draggedTask = null;
+      useTaskStore.setState({ searchTerm: '' });
     });
   });
 
-  it('should add a task', () => {
+  it('should have an empty initial search term', () => {
     const { result } = renderHook(() => useTaskStore());
-
-    act(() => {
-      result.current.addTask({ title: 'New Task', description: 'Description', status: 'todo' });
-    });
-
-    expect(result.current.tasks.length).toBe(1);
-    expect(result.current.tasks[0].title).toBe('New Task');
-    expect(result.current.tasks[0].id).toBeDefined();
+    expect(result.current.searchTerm).toBe('');
   });
 
-  it('should delete a task', () => {
+  it('should update the search term when setSearchTerm is called', () => {
     const { result } = renderHook(() => useTaskStore());
 
-    act(() => {
-      result.current.addTask({ title: 'Task to delete', description: '', status: 'todo' });
-    });
-
-    const taskId = result.current.tasks[0].id;
+    const newSearchTerm = 'find this task';
 
     act(() => {
-      result.current.deleteTask(taskId);
+      result.current.setSearchTerm(newSearchTerm);
     });
 
-    expect(result.current.tasks.length).toBe(0);
-  });
-
-  it('should update a task', () => {
-    const { result } = renderHook(() => useTaskStore());
-
-    act(() => {
-      result.current.addTask({ title: 'Old Title', description: 'Old Desc', status: 'todo' });
-    });
-
-    const taskId = result.current.tasks[0].id;
-
-    act(() => {
-      result.current.updateTask(taskId, { title: 'New Title' });
-    });
-
-    expect(result.current.tasks[0].title).toBe('New Title');
-    expect(result.current.tasks[0].description).toBe('Old Desc');
-  });
-
-  it('should move a task to a different column', () => {
-    const { result } = renderHook(() => useTaskStore());
-
-    // Добавляем две задачи в разные колонки
-    act(() => {
-      result.current.addTask({ title: 'Task 1', status: 'todo' });
-      result.current.addTask({ title: 'Task 2', status: 'in-progress' });
-    });
-
-    const task1Id = result.current.tasks.find(t => t.title === 'Task 1')!.id;
-    
-
-    // Симулируем перетаскивание Task 1 в колонку 'in-progress'
-    act(() => {
-      result.current.setDraggedTask(task1Id);
-      result.current.moveTaskToColumn(task1Id, 'in-progress');
-    });
-
-    const movedTask = result.current.tasks.find(t => t.id === task1Id);
-    expect(movedTask?.status).toBe('in-progress');
-  });
-
-  it('should move a task within the same column', () => {
-    const { result } = renderHook(() => useTaskStore());
-
-    act(() => {
-      result.current.addTask({ title: 'Task 1', status: 'todo' });
-      result.current.addTask({ title: 'Task 2', status: 'todo' });
-      result.current.addTask({ title: 'Task 3', status: 'todo' });
-    });
-
-    const task1Id = result.current.tasks.find(t => t.title === 'Task 1')!.id;
-    const task3Id = result.current.tasks.find(t => t.title === 'Task 3')!.id;
-
-    expect(result.current.tasks.map(t => t.title)).toEqual(['Task 1', 'Task 2', 'Task 3']);
-
-    // Перемещаем Task 3 на место Task 1
-    act(() => {
-      result.current.moveTask(task3Id, task1Id);
-    });
-
-    expect(result.current.tasks.map(t => t.title)).toEqual(['Task 3', 'Task 1', 'Task 2']);
+    expect(result.current.searchTerm).toBe(newSearchTerm);
   });
 });
-

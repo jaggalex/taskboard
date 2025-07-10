@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import type { Task } from '../types/task';
+import type { Task as ApiTask } from '../api'; // Используем новый тип
 import { TaskItem } from './TaskItem';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -7,11 +7,12 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 interface TaskColumnProps {
   id: string;
   title: string;
-  tasks: Task[];
-  onTaskClick: (task: Task) => void;
+  tasks: ApiTask[];
+  onTaskClick: (task: ApiTask) => void;
+  onTaskDelete: (id: string) => void; // Новый пропс
 }
 
-export const TaskColumn: FC<TaskColumnProps> = ({ id, title, tasks, onTaskClick }) => {
+export const TaskColumn: FC<TaskColumnProps> = ({ id, title, tasks, onTaskClick, onTaskDelete }) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
     data: {
@@ -42,7 +43,7 @@ export const TaskColumn: FC<TaskColumnProps> = ({ id, title, tasks, onTaskClick 
         <div className="space-y-3">
           {tasks.length > 0 ? (
             tasks.map(task => (
-              <TaskItem key={task.id} task={task} onClick={onTaskClick} />
+              <TaskItem key={task.id} task={task} onClick={onTaskClick} onDelete={onTaskDelete} />
             ))
           ) : (
             <div className="text-center text-sm text-slate-500 dark:text-slate-400 py-4">

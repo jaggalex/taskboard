@@ -1,17 +1,17 @@
 import type { FC } from 'react';
-import type { Task } from '../types/task';
+import type { Task } from '../api'; // Используем новый тип
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
-import { useTaskStore } from '../store/taskStore';
 
 interface TaskItemProps {
     task: Task;
     onClick: (task: Task) => void;
+    onDelete: (id: string) => void; // Новый пропс
 }
 
-export const TaskItem: FC<TaskItemProps> = ({ task, onClick }) => {
-    const deleteTask = useTaskStore((state) => state.deleteTask);
+export const TaskItem: FC<TaskItemProps> = ({ task, onClick, onDelete }) => {
+    // useTaskStore удален
 
     const {
         attributes,
@@ -42,7 +42,7 @@ export const TaskItem: FC<TaskItemProps> = ({ task, onClick }) => {
 
     return (
         <motion.div
-            layoutId={task.id} // <-- Вот ключ к решению!
+            layoutId={task.id}
             ref={setNodeRef}
             style={style}
             className={containerClasses}
@@ -54,7 +54,7 @@ export const TaskItem: FC<TaskItemProps> = ({ task, onClick }) => {
             <button 
                 onClick={(e) => {
                     e.stopPropagation();
-                    deleteTask(task.id);
+                    onDelete(task.id); // Вызываем onDelete из пропсов
                 }}
                 className="absolute top-2 right-2 p-1 rounded-full bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-300 opacity-0 group-hover:opacity-100 hover:bg-red-200 dark:hover:bg-red-500/50 hover:text-red-700 dark:hover:text-red-100 transition-all"
                 title="Удалить задачу"

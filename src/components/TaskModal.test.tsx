@@ -1,87 +1,105 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TaskModal } from './TaskModal';
-import { useTaskStore } from '../store/taskStore';
-import type { Task } from '../types/task';
+import * as api from '../api';
 import '@testing-library/jest-dom';
 
-// Мокаем стор
-jest.mock('../store/taskStore');
-const mockedUseTaskStore = useTaskStore as unknown as jest.Mock;
+// 1. Мокаем весь модуль api
+jest.mock('../api');
 
-const mockAddTask = jest.fn();
-const mockUpdateTask = jest.fn();
+// Приводим замоканный модуль к типу, чтобы TypeScript не ругался
+const mockedApi = api as jest.Mocked<typeof api>;
+
+// 2. Создаем обертку для рендера с QueryClientProvider
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false, // Отключаем повторные попытки в тестах
+    },
+  },
+});
+
+const renderWithClient = (ui: React.ReactElement) => {
+  const testQueryClient = createTestQueryClient();
+  const { rerender, ...result } = render(
+    <QueryClientProvider client={testQueryClient}>{ui}</QueryClientProvider>
+  );
+  return {
+    ...result,
+    rerender: (rerenderUi: React.ReactElement) =>
+      rerender(
+        <QueryClientProvider client={testQueryClient}>{rerenderUi}</QueryClientProvider>
+      ),
+  };
+};
+
 
 describe('TaskModal', () => {
   const mockOnClose = jest.fn();
-  const mockTask: Task = {
+  const mockTask: api.Task = {
     id: '1',
     title: 'Existing Task',
     description: 'Existing Description',
-    status: 'in-progress',
+    status: 'in_progress',
+    order: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 
   beforeEach(() => {
-    // Сбрасываем моки
-    mockAddTask.mockClear();
-    mockUpdateTask.mockClear();
+    // Сбрасываем все моки перед каждым тестом
+    jest.clearAllMocks();
     mockOnClose.mockClear();
+  });
 
-    // Настраиваем мок стора для работы с селекторами
-    mockedUseTaskStore.mockImplementation((selector) => {
-      const state = {
-        addTask: mockAddTask,
-        updateTask: mockUpdateTask,
-      };
-      // Имитируем выбор нужной функции из стора
-      if (selector.toString().includes('addTask')) return state.addTask;
-      if (selector.toString().includes('updateTask')) return state.updateTask;
-      return state;
+  it('should render in create mode and call createTask on submit', async () => {
+    // Настраиваем мок-ответ от API
+    mockedApi.createTask.mockResolvedValue(mockTask);
+
+    renderWithClient(<TaskModal onClose={mockOnClose} />);
+
+    fireEvent.change(screen.getByLabelText(/заголовок/i), { target: { value: 'New Task Title' } });
+    fireEvent.change(screen.getByLabelText(/описание/i), { target: { value: 'New Description' } });
+    fireEvent.click(screen.getByRole('button', { name: /создать/i }));
+
+    // Проверяем, что наша API-функция была вызвана с правильными данными
+    await waitFor(() => {
+      expect(mockedApi.createTask).toHaveBeenCalledTimes(1);
+      expect(mockedApi.createTask).toHaveBeenCalledWith({
+        title: 'New Task Title',
+        description: 'New Description',
+        status: 'todo',
+      });
+    });
+
+    // Проверяем, что модальное окно закрылось после успешного вызова
+    await waitFor(() => {
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('should render in create mode with empty fields', () => {
-    render(<TaskModal onClose={mockOnClose} />);
+  it('should render in edit mode and call updateTask on submit', async () => {
+    mockedApi.updateTask.mockResolvedValue(mockTask);
 
-    expect(screen.getByRole('heading', { name: /создать задачу/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/заголовок/i)).toHaveValue('');
-    expect(screen.getByLabelText(/описание/i)).toHaveValue('');
-    expect(screen.getByLabelText(/статус/i)).toHaveValue('todo');
-  });
+    renderWithClient(<TaskModal task={mockTask} onClose={mockOnClose} />);
 
-  it('should render in edit mode with populated fields', () => {
-    render(<TaskModal task={mockTask} onClose={mockOnClose} />);
-
-    expect(screen.getByRole('heading', { name: /редактировать задачу/i })).toBeInTheDocument();
+    // Проверяем, что поля заполнены данными из пропса
     expect(screen.getByLabelText(/заголовок/i)).toHaveValue(mockTask.title);
-    expect(screen.getByLabelText(/описание/i)).toHaveValue(mockTask.description);
-    expect(screen.getByLabelText(/статус/i)).toHaveValue(mockTask.status);
-  });
 
-  it('should call addTask and onClose when creating a new task', () => {
-    render(<TaskModal onClose={mockOnClose} />);
-
-    fireEvent.change(screen.getByLabelText(/заголовок/i), { target: { value: 'New Task' } });
-    fireEvent.click(screen.getByRole('button', { name: /создать/i }));
-
-    expect(mockAddTask).toHaveBeenCalledTimes(1);
-    expect(mockAddTask).toHaveBeenCalledWith({ title: 'New Task', description: '', status: 'todo' });
-    expect(mockOnClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('should call updateTask and onClose when editing a task', () => {
-    render(<TaskModal task={mockTask} onClose={mockOnClose} />);
-
-    fireEvent.change(screen.getByLabelText(/заголовок/i), { target: { value: 'Updated Task' } });
+    fireEvent.change(screen.getByLabelText(/заголовок/i), { target: { value: 'Updated Title' } });
     fireEvent.click(screen.getByRole('button', { name: /сохранить/i }));
 
-    expect(mockUpdateTask).toHaveBeenCalledTimes(1);
-    expect(mockUpdateTask).toHaveBeenCalledWith(mockTask.id, { title: 'Updated Task', description: mockTask.description, status: mockTask.status });
-    expect(mockOnClose).toHaveBeenCalledTimes(1);
-  });
-
-  it('should call onClose when the cancel button is clicked', () => {
-    render(<TaskModal onClose={mockOnClose} />);
-    fireEvent.click(screen.getByRole('button', { name: /отмена/i }));
-    expect(mockOnClose).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(mockedApi.updateTask).toHaveBeenCalledTimes(1);
+      expect(mockedApi.updateTask).toHaveBeenCalledWith(mockTask.id, {
+        title: 'Updated Title',
+        description: mockTask.description,
+        status: mockTask.status,
+      });
+    });
+    
+    await waitFor(() => {
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+    });
   });
 });

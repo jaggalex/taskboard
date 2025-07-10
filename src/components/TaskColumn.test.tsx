@@ -1,27 +1,29 @@
 import { render, screen } from '@testing-library/react';
 import { DndContext } from '@dnd-kit/core';
 import { TaskColumn } from './TaskColumn';
-import type { Task } from '../types/task';
+import type { Task as ApiTask } from '../api'; // Используем новый тип
 import '@testing-library/jest-dom';
 
 // Мокаем TaskItem, так как мы тестируем только TaskColumn
 jest.mock('./TaskItem', () => ({
-  TaskItem: ({ task }: { task: Task }) => <div data-testid="task-item">{task.title}</div>,
+  TaskItem: ({ task }: { task: ApiTask }) => <div data-testid="task-item">{task.title}</div>,
 }));
 
 describe('TaskColumn', () => {
-  const mockTasks: Task[] = [
-    { id: '1', title: 'Task 1', status: 'todo' },
-    { id: '2', title: 'Task 2', status: 'todo' },
+  // Обновляем мок-данные, чтобы они соответствовали новому типу ApiTask
+  const mockTasks: ApiTask[] = [
+    { id: '1', title: 'Task 1', status: 'todo', order: 1, createdAt: '', updatedAt: '' },
+    { id: '2', title: 'Task 2', status: 'todo', order: 2, createdAt: '', updatedAt: '' },
   ];
 
   const mockOnTaskClick = jest.fn();
+  const mockOnTaskDelete = jest.fn();
 
   // Оборачиваем компонент в DndContext, так как он используется внутри
-  const renderWithDndContext = (tasks: Task[]) => {
+  const renderWithDndContext = (tasks: ApiTask[]) => {
     return render(
       <DndContext onDragEnd={() => {}}>
-        <TaskColumn id="todo" title="Нужно сделать" tasks={tasks} onTaskClick={mockOnTaskClick} />
+        <TaskColumn id="todo" title="Нужно сделать" tasks={tasks} onTaskClick={mockOnTaskClick} onTaskDelete={mockOnTaskDelete} />
       </DndContext>
     );
   };
