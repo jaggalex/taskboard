@@ -11,6 +11,7 @@ export interface Task extends Omit<TaskFromStore, 'status'> {
 
 const apiClient = axios.create({
   baseURL: 'http://localhost:3001/api',
+  withCredentials: true, // <-- Вот эта строка
 });
 
 export const getTasks = async (): Promise<Task[]> => {
@@ -37,3 +38,26 @@ export const updateTask = async (id: string, task: UpdateTaskPayload): Promise<T
 export const deleteTask = async (id: string): Promise<void> => {
   await apiClient.delete(`/tasks/${id}`);
 };
+
+// --- Функции для аутентификации ---
+
+export type RegisterPayload = {
+  email: string;
+  password: string
+}
+export const register = async (payload: RegisterPayload) => {
+  return apiClient.post('/auth/register', payload);
+}
+
+export type LoginPayload = RegisterPayload;
+export const login = async (payload: LoginPayload) => {
+  return apiClient.post('/auth/login', payload);
+}
+
+export const logout = async () => {
+  return apiClient.post('/auth/logout');
+}
+
+export const getMe = async () => {
+  return apiClient.get('/auth/me');
+}

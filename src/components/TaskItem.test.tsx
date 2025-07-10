@@ -1,8 +1,8 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '../../test-utils'; // Используем кастомный рендер
 import { TaskItem } from './TaskItem';
-import type { Task as ApiTask } from '../api'; // Используем новый тип
+import type { Task as ApiTask } from '../api';
 import '@testing-library/jest-dom';
-import { DndContext } from '@dnd-kit/core'; // DndContext нужен для useSortable
+// DndContext больше не нужен здесь, так как он в нашей обертке
 
 describe('TaskItem', () => {
   const mockTask: ApiTask = {
@@ -18,14 +18,8 @@ describe('TaskItem', () => {
   const mockOnClick = jest.fn();
   const mockOnDelete = jest.fn();
 
-  // Обертка для рендера, так как useSortable требует DndContext
-  const renderWithDndContext = (task: ApiTask) => {
-    return render(
-      <DndContext onDragEnd={() => {}}>
-        <TaskItem task={task} onClick={mockOnClick} onDelete={mockOnDelete} />
-      </DndContext>
-    );
-  };
+  // Удаляем старую обертку
+  // const renderWithDndContext = ...
 
   beforeEach(() => {
     mockOnClick.mockClear();
@@ -33,15 +27,14 @@ describe('TaskItem', () => {
   });
 
   it('should render the task title and description', () => {
-    renderWithDndContext(mockTask);
+    render(<TaskItem task={mockTask} onClick={mockOnClick} onDelete={mockOnDelete} />);
     expect(screen.getByText('Test Task')).toBeInTheDocument();
     expect(screen.getByText('Test Description')).toBeInTheDocument();
   });
 
   it('should call onClick when the main area is clicked', () => {
-    renderWithDndContext(mockTask);
+    render(<TaskItem task={mockTask} onClick={mockOnClick} onDelete={mockOnDelete} />);
     
-    // Кликаем на элемент с текстом, чтобы имитировать клик по основной области
     fireEvent.click(screen.getByText('Test Task'));
     
     expect(mockOnClick).toHaveBeenCalledTimes(1);
@@ -49,7 +42,7 @@ describe('TaskItem', () => {
   });
 
   it('should call onDelete with the task id when the delete button is clicked', () => {
-    renderWithDndContext(mockTask);
+    render(<TaskItem task={mockTask} onClick={mockOnClick} onDelete={mockOnDelete} />);
     
     const deleteButton = screen.getByTitle(/удалить задачу/i);
     fireEvent.click(deleteButton);
@@ -57,7 +50,6 @@ describe('TaskItem', () => {
     expect(mockOnDelete).toHaveBeenCalledTimes(1);
     expect(mockOnDelete).toHaveBeenCalledWith(mockTask.id);
     
-    // Убедимся, что клик по кнопке не триггерит onClick основной области
     expect(mockOnClick).not.toHaveBeenCalled();
   });
 });
