@@ -8,11 +8,11 @@ interface TaskColumnProps {
   id: string;
   title: string;
   tasks: ApiTask[];
-  onTaskClick: (task: ApiTask) => void;
-  onTaskDelete: (id: string) => void; // Новый пропс
+  onTaskEdit: (task: ApiTask) => void; // Переименовано
+  onTaskDelete: (id: string) => void;
 }
 
-export const TaskColumn: FC<TaskColumnProps> = ({ id, title, tasks, onTaskClick, onTaskDelete }) => {
+export const TaskColumn: FC<TaskColumnProps> = ({ id, title, tasks, onTaskEdit, onTaskDelete }) => {
   const { setNodeRef, isOver } = useDroppable({
     id,
     data: {
@@ -43,7 +43,7 @@ export const TaskColumn: FC<TaskColumnProps> = ({ id, title, tasks, onTaskClick,
         <div className="space-y-3">
           {tasks.length > 0 ? (
             tasks.map(task => (
-              <TaskItem key={task.id} task={task} onClick={onTaskClick} onDelete={onTaskDelete} />
+              <TaskItem key={task.id} task={task} onEdit={onTaskEdit} onDelete={onTaskDelete} />
             ))
           ) : (
             <div className="text-center text-sm text-slate-500 dark:text-slate-400 py-4">

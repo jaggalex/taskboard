@@ -1,7 +1,6 @@
-import { render, screen } from '@testing-library/react';
-import { DndContext } from '@dnd-kit/core';
+import { render, screen } from '../test-utils'; // Исправлен путь
 import { TaskColumn } from './TaskColumn';
-import type { Task as ApiTask } from '../api'; // Используем новый тип
+import type { Task as ApiTask } from '../api';
 import '@testing-library/jest-dom';
 
 // Мокаем TaskItem, так как мы тестируем только TaskColumn
@@ -10,31 +9,21 @@ jest.mock('./TaskItem', () => ({
 }));
 
 describe('TaskColumn', () => {
-  // Обновляем мок-данные, чтобы они соответствовали новому типу ApiTask
   const mockTasks: ApiTask[] = [
-    { id: '1', title: 'Task 1', status: 'todo', order: 1, createdAt: '', updatedAt: '' },
-    { id: '2', title: 'Task 2', status: 'todo', order: 2, createdAt: '', updatedAt: '' },
+    { id: '1', title: 'Task 1', description: 'd1', status: 'todo', order: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), userId: 'u1' },
+    { id: '2', title: 'Task 2', description: 'd2', status: 'todo', order: 2, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), userId: 'u1' },
   ];
 
-  const mockOnTaskClick = jest.fn();
+  const mockOnTaskEdit = jest.fn();
   const mockOnTaskDelete = jest.fn();
 
-  // Оборачиваем компонент в DndContext, так как он используется внутри
-  const renderWithDndContext = (tasks: ApiTask[]) => {
-    return render(
-      <DndContext onDragEnd={() => {}}>
-        <TaskColumn id="todo" title="Нужно сделать" tasks={tasks} onTaskClick={mockOnTaskClick} onTaskDelete={mockOnTaskDelete} />
-      </DndContext>
-    );
-  };
-
   it('should render the column title', () => {
-    renderWithDndContext(mockTasks);
+    render(<TaskColumn id="todo" title="Нужно сделать" tasks={mockTasks} onTaskEdit={mockOnTaskEdit} onTaskDelete={mockOnTaskDelete} />);
     expect(screen.getByRole('heading', { name: /нужно сделать/i })).toBeInTheDocument();
   });
 
   it('should render all provided tasks', () => {
-    renderWithDndContext(mockTasks);
+    render(<TaskColumn id="todo" title="Нужно сделать" tasks={mockTasks} onTaskEdit={mockOnTaskEdit} onTaskDelete={mockOnTaskDelete} />);
     const taskItems = screen.getAllByTestId('task-item');
     expect(taskItems.length).toBe(2);
     expect(screen.getByText('Task 1')).toBeInTheDocument();
@@ -42,7 +31,7 @@ describe('TaskColumn', () => {
   });
 
   it('should display a message when there are no tasks', () => {
-    renderWithDndContext([]);
+    render(<TaskColumn id="todo" title="Нужно сделать" tasks={[]} onTaskEdit={mockOnTaskEdit} onTaskDelete={mockOnTaskDelete} />);
     expect(screen.getByText(/задач нет/i)).toBeInTheDocument();
     expect(screen.queryByTestId('task-item')).not.toBeInTheDocument();
   });

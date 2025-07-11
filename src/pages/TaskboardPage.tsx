@@ -157,12 +157,12 @@ function TaskboardPage() {
           </div>
         </div>
         <div className="flex space-x-8 justify-center items-start mt-4">
-          <TaskColumn id="todo" title="Нужно сделать" tasks={todoTasks} onTaskClick={handleOpenEditModal} onTaskDelete={deleteTaskMutation.mutate} />
-          <TaskColumn id="in_progress" title="В процессе" tasks={inProgressTasks} onTaskClick={handleOpenEditModal} onTaskDelete={deleteTaskMutation.mutate} />
-          <TaskColumn id="done" title="Готово" tasks={doneTasks} onTaskClick={handleOpenEditModal} onTaskDelete={deleteTaskMutation.mutate} />
+          <TaskColumn id="todo" title="Нужно сделать" tasks={todoTasks} onTaskEdit={handleOpenEditModal} onTaskDelete={deleteTaskMutation.mutate} />
+          <TaskColumn id="in_progress" title="В процессе" tasks={inProgressTasks} onTaskEdit={handleOpenEditModal} onTaskDelete={deleteTaskMutation.mutate} />
+          <TaskColumn id="done" title="Готово" tasks={doneTasks} onTaskEdit={handleOpenEditModal} onTaskDelete={deleteTaskMutation.mutate} />
         </div>
       </main>
-      <DragOverlay>{activeTask ? <TaskItem task={activeTask} onClick={() => {}} /> : null}</DragOverlay>
+      <DragOverlay>{activeTask ? <TaskItem task={activeTask} onEdit={() => {}} onDelete={() => {}} /> : null}</DragOverlay>
       {isModalOpen && <TaskModal task={selectedTask} onClose={handleCloseModal} />}
     </DndContext>
   );

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from '../api';
 import type { TaskStatus } from '../types/task';
+import { useTaskStore } from '../store/taskStore'; // 1. Импортируем стор
 
 interface TaskModalProps {
   task?: api.Task | null;
@@ -11,6 +12,7 @@ interface TaskModalProps {
 
 export const TaskModal: FC<TaskModalProps> = ({ task, onClose }) => {
   const queryClient = useQueryClient();
+  const user = useTaskStore((state) => state.user); // 2. Получаем пользователя
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<TaskStatus>('todo');
@@ -46,12 +48,19 @@ export const TaskModal: FC<TaskModalProps> = ({ task, onClose }) => {
     if (!title.trim()) return;
 
     if (isEditing && task) {
+      // В обновлении userId не нужен, так как он не меняется
       updateTaskMutation.mutate({
         id: task.id,
         payload: { title, description, status },
       });
     } else {
-      createTaskMutation.mutate({ title, description, status });
+      // 3. Добавляем userId при создании
+      if (!user) {
+        // Можно показать ошибку пользователю
+        console.error("Невозможно создать задачу: пользователь не аутентифицирован.");
+        return;
+      }
+      createTaskMutation.mutate({ title, description, status, userId: user.id });
     }
   };
   
@@ -86,7 +95,7 @@ export const TaskModal: FC<TaskModalProps> = ({ task, onClose }) => {
           </div>
           <div className="flex justify-end space-x-3">
             <button type="button" onClick={onClose} className="px-4 py-2 bg-slate-200 dark:bg-slate-600 text-slate-800 dark:text-slate-100 rounded-md hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors" disabled={isSubmitting}>Отмена</button>
-            <button type="submit" className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 dark:hover:bg-sky-500 transition-colors disabled:bg-sky-400" disabled={isSubmitting}>
+            <button type="submit" className="px-4 py-2 bg-sky-600 text-white rounded-md hover:bg-sky-700 dark:hover:bg-sky-500 transition-colors disabled:bg-sky-400" disabled={isSubmitting || (!isEditing && !user)}>
               {isSubmitting ? 'Сохранение...' : (isEditing ? 'Сохранить' : 'Создать')}
             </button>
           </div>
